@@ -1,0 +1,33 @@
+export enum EventsServer {
+  SEND_MESSAGE = 'send_message',
+  NEXT_SPEAKER = 'next_speaker',
+  SEND_COMMAND = 'send_command',
+  CREATE_CHAT = 'create_chat',
+  JOIN_CHAT = 'join_chat',
+  GET_ONLINE_MEMBERS = 'get_online_members',
+  GET_CHAT_ONLINE_MEMBERS = 'get_chat_online_members',
+  GET_JOINED_CHATS = 'get_joined_chats',
+  GET_CHAT = 'get_chat',
+  DELETE_CHAT = 'delete_chat',
+  EXIT_CHAT = 'exit_chat',
+  PULL_MEMBERS_INTO_CHAT = 'pull_members_into_chat',
+  GET_MEMBER = 'get_member',
+  GET_MEMBERS = 'get_members',
+  GET_CREATED_CHATS = 'get_created_chats',
+  GET_CHAT_MEMBERS = 'get_chat_members',
+  GET_MEMBER_BY_NAME = 'get_member_by_name',
+  REMOVE_MEMBER_FROM_CHAT = 'remove_member_from_chat',
+  LOAD_CHAT_MESSAGES_FROM_SERVER = 'load_chat_messages_from_server',
+  SEND_NOTIFICATION_TO_CHAT = 'send_notification_to_chat',
+  REGISTER_CHAT_MANAGER = 'register_chat_manager',
+  LISTEN_IN_CHAT = 'listen_in_chat',
+  UNLISTEN_IN_CHAT = 'unlisten_in_chat',
+}
+
+export enum EventsClient {
+  RECEIVE_MESSAGE = 'receive_message',
+  RECEIVE_COMMAND = 'receive_command',
+  RECEIVE_LOGIN_RESPONSE = 'receive_login_response',
+  NEXT_SPEAKER = 'next_speaker',
+  RECEIVE_NOTIFICATION_FROM_CHAT = 'receive_notification_from_chat',
+}
