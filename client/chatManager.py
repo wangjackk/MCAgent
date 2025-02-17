@@ -81,7 +81,7 @@ class ChatManager(BaseChatManager):
     def on_receive_message(self, message: Message):
         super().on_receive_message(message)
         next_speaker = self.get_next_speaker(message)
-        # print('next speaker:', next_speaker)
+        print('next speaker:', next_speaker)
         if next_speaker:
             self.choose_next_speaker(message.chat_id, next_speaker)
 
@@ -149,6 +149,7 @@ class ChatManager(BaseChatManager):
 
 if __name__ == '__main__':
     chat_manager = ChatManager('chat manager', 'chat_manager')
+    chat_manager.base_url = 'http://121.37.253.121'
     # chat_manager.signup()
     chat_manager.login()
     chat_manager.socket.wait()

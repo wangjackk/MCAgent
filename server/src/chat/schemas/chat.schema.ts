@@ -35,7 +35,7 @@ export class Chat {
 
   //监听者
   @Prop({ type: [String], default: [] })
-  listeners: string[];
+  chat_listeners: string[];
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);

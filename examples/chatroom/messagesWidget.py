@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QTimer
 from datetime import datetime
 import uuid
 
-from dto import Message
+from client.dto import Message
 
 from examples.chatroom.globals import get_human_agent
 
@@ -28,7 +28,7 @@ class MessageBubble(QFrame):
         self.message = message
         self.is_self = is_self
         self.setup_ui()
-        self.updateMaxWidth()
+        # 初始化时不更新宽度，等待父窗口统一更新
     
     def setup_ui(self):
         """初始化UI组件"""
@@ -125,7 +125,9 @@ class MessageBubble(QFrame):
             self.msg_label.setWordWrap(True)
             width = target_width
         
-        self.msg_label.setFixedWidth(width)
+        # 只有宽度真的改变时才更新
+        if self.msg_label.width() != width:
+            self.msg_label.setFixedWidth(width)
 
 
 class MessagesWidget(QWidget):
@@ -142,10 +144,26 @@ class MessagesWidget(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.human_agent = get_human_agent()
+        self.parent = parent
         self.message_bubbles = []
+        self.resize_timer = QTimer()
+        self.resize_timer.setSingleShot(True)
+        self.resize_timer.timeout.connect(self.update_all_bubbles_width)
         self.setup_ui()
     
+    @property
+    def human_agent(self):
+        """获取 human_agent 实例"""
+        if self.parent and hasattr(self.parent, 'human_agent'):
+            agent = self.parent.human_agent
+            if agent and agent.login_success:
+                return agent
+            else:
+                print("human_agent 未就绪")
+                return None
+        print("无法获取 human_agent")
+        return None
+
     def setup_ui(self):
         """初始化UI组件"""
         self.setup_layout()
@@ -183,7 +201,8 @@ class MessagesWidget(QWidget):
     def resizeEvent(self, event):
         """窗口大小改变事件"""
         super().resizeEvent(event)
-        self.update_all_bubbles_width()
+        # 使用定时器延迟更新，避免频繁计算
+        self.resize_timer.start(100)
     
     def update_all_bubbles_width(self):
         """更新所有消息气泡的宽度"""
@@ -192,10 +211,16 @@ class MessagesWidget(QWidget):
     
     def add_message(self, message: Message):
         """添加新消息"""
+        if not self.human_agent:
+            print("human_agent 未就绪，无法添加消息")
+            return
         bubble = MessageBubble(message, message.from_member_id == self.human_agent.member_id)
         self.messages_layout.insertWidget(self.messages_layout.count() - 1, bubble)
         self.message_bubbles.append(bubble)
-        self.scroll_to_bottom()
+        # 直接滚动到底部，不使用定时器
+        self.scroll_area.verticalScrollBar().setValue(
+            self.scroll_area.verticalScrollBar().maximum()
+        )
 
     def scroll_to_bottom(self):
         """滚动到底部"""
@@ -211,22 +236,23 @@ class MessagesWidget(QWidget):
 
     def load_messages(self, chat_id: str):
         """从服务器加载指定聊天的消息"""
-        self.clear_messages()
-        messages = self.human_agent.load_chat_messages_from_server(chat_id, 5)
-        # print(f'load messages {len(messages)} :', messages)
-
-        member_id_to_name = {}
-        for message in messages:
-            # 检查message是否已经是Message对象
-            if not isinstance(message, Message):
-                message = Message(**message)
+        try:
+            if not self.human_agent:
+                print("human_agent 未就绪，无法加载消息")
+                return
+            self.clear_messages()
+            messages = self.human_agent.load_chat_messages_from_server(chat_id, 5)
             
-            if message.from_member_name == '' or message.from_member_name is None:
-                if message.from_member_id not in member_id_to_name:
-                    member_id_to_name[message.from_member_id] = self.human_agent.get_member(message.from_member_id).name
-                message.from_member_name = member_id_to_name[message.from_member_id]
-            self.add_message(message)
-        self.scroll_to_bottom()
+            # 禁用布局更新，提高性能
+            self.messages_container.setUpdatesEnabled(False)
+            for message in messages:
+                self.add_message(message)
+            self.messages_container.setUpdatesEnabled(True)
+            
+            # 更新所有消息气泡的宽度
+            self.update_all_bubbles_width()
+        except Exception as e:
+            print(f"加载消息时发生错误：{e}")
 
     def add_test_messages(self):
         """添加一些测试消息"""

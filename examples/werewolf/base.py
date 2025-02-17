@@ -1,12 +1,13 @@
+from datetime import datetime
 import re
 from enum import Enum, auto
 from typing import List, Optional, Dict
 
 from pydantic import BaseModel
-from dto import Member
-from langChainMA import LangchainMemberAgent
-from memberClient import command
-from memory import AgentChat
+from client.dto import Member
+from client.langChainMA import LangchainMemberAgent
+from client.memberClient import command
+from client.memory import AgentChat
 
 # 游戏规则说明
 GameRule = """
@@ -161,10 +162,16 @@ def get_target(text: str, keyword: str) -> Optional[str]:
     Returns:
         提取到的目标信息，如果未找到则返回None
     """
-    pattern = rf'\|{keyword}:([^|]+)\|'
+    print(f"输入文本: {text}")
+    print(f"关键词: {keyword}")
+    pattern = rf'\|{keyword}:([^|\n]+)'
+    print(f"正则表达式: {pattern}")
     match = re.search(pattern, text)
     if match:
-        return match.group(1)
+        result = match.group(1).strip()
+        print(f"匹配结果: {result}")
+        return result
+    print("未找到匹配")
     return None
 
 
@@ -632,7 +639,11 @@ class Prophet(Villager):
         res = self.get_ai_response(self.prompt, temp_chat)
         print('预言家思考:', res)
 
-        return get_target(res, 'VERIFY')
+        target = get_target(res, 'VERIFY')
+        # 前缀带时间戳
+        print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}预言家选择验证：{target}')
+
+        return target
 
     @command('verify-villager')
     def verify_villager(self, data: dict) -> bool:

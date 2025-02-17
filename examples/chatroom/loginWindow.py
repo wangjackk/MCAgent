@@ -140,18 +140,37 @@ class LoginWindow(QDialog):
             QMessageBox.warning(self, '提示', '请输入成员ID和姓名')
             return
         
-        human_agent:QtHumanAgent = init_human_agent(name, member_id)
-        success = human_agent.login()
-        print('login success') if success else print('login failed')
-        if not human_agent.login_success:
-            QMessageBox.warning(self, '错误', '登录失败，请检查成员ID是否正确')
-            return
-
-        self.member_id = member_id
-        self.name = name
+        human_agent: QtHumanAgent = init_human_agent(name, member_id)
         
-        self.save_login_info()
-        self.accept()
+        # 禁用登录按钮，避免重复点击
+        self.login_button.setEnabled(False)
+        self.login_button.setText('登录中...')
+        
+        try:
+            success = human_agent.login()
+            
+            # 等待登录成功标志，最多等待5秒
+            wait_time = 0
+            while not human_agent.login_success and wait_time < 50:
+                time.sleep(0.1)
+                wait_time += 1
+            
+            if not human_agent.login_success:
+                QMessageBox.warning(self, '错误', '登录失败，请检查成员ID是否正确')
+                return
+            
+            self.member_id = member_id
+            self.name = name
+            
+            self.save_login_info()
+            self.accept()
+            
+        except Exception as e:
+            QMessageBox.warning(self, '错误', f'登录时发生错误：{str(e)}')
+        finally:
+            # 恢复登录按钮状态
+            self.login_button.setEnabled(True)
+            self.login_button.setText('登录')
     
     def on_signup(self):
         """处理注册按钮点击事件"""
@@ -162,7 +181,7 @@ class LoginWindow(QDialog):
             QMessageBox.warning(self, '提示', '请输入成员ID和姓名')
             return
         
-        human_agent = QtHumanAgent(name, member_id)
+        human_agent = init_human_agent(name, member_id)
         result = human_agent.signup()
 
         print('signup result:', result)

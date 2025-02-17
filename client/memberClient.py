@@ -195,6 +195,7 @@ class MemberClient:
 
         # 发送 POST 请求到 NestJS 后端的 signup 接口
         try:
+            print('signup:', self.base_url)
             response = requests.post(self.base_url + '/chat/signup', json=data)
             rsp = response.json()
             response.status_code = rsp['status']

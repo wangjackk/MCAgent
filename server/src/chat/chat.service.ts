@@ -46,7 +46,7 @@ export class ChatService {
   async addMember(chat_id: string, member_id: string) {
     // 如果成员在监听列表中，则移除
     const chat = await this.getChat(chat_id);
-    if (chat.listeners.includes(member_id)) {
+    if (chat.chat_listeners.includes(member_id)) {
       await this.chatRepository.removeListener(chat_id, member_id);
     }
     return this.chatRepository.addMember(chat_id, member_id);

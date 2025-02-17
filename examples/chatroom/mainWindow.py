@@ -13,6 +13,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         # 初始化全局human_agent
         self.human_agent = globals.get_human_agent()
+        if self.human_agent is None:
+            raise RuntimeError("MainWindow 需要先初始化 human_agent")
+        if not self.human_agent.login_success:
+            raise RuntimeError("MainWindow 需要先登录成功")
 
         # 创建中心部件
         self.central_widget = QWidget(self)

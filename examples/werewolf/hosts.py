@@ -202,6 +202,7 @@ class GameHost(BaseHost):
         handler: Callable[[Message], None] = self.handlers.get(self.game_state)
         # print(f'game_state: {self.game_state}, handler: {handler}')
         if handler:
+            # print('handle message:', message.message)
             handler(message)
         else:
             print(f'host 收到消息：{message.message}，但没有任何处理函数')
@@ -298,19 +299,33 @@ class GameHost(BaseHost):
             # 如果没有预言家，直接进入女巫阶段
             self.game_state = GameState.WITCH_SAVE
             self.handle_witch_save_or_kill()
-
             return None
 
         candidates = [p.name for p in self.get_alive_villagers() if p.name != prophet.name]
-        verify_target = self.send_command('get-verify-target', [prophet.member_id],
-                                          {'candidates': candidates})[0].result
+        if not candidates:
+            raise RuntimeError("没有可验证的目标，游戏状态异常")
 
-        if verify_target:
-            target_player = self.get_villager_info_by_name(verify_target)
-            self.send_command('verify-villager', [prophet.member_id],
-                              {'name': verify_target, 'role': target_player.role.value})
-            result = {'name': verify_target, 'role': target_player.role.value}
-            self.days_manager.set_prophet_verify(self.game_time.day_number, result)
+        command_results = self.send_command('get-verify-target', [prophet.member_id],
+                                          {'candidates': candidates})
+        print('command_results:', command_results)
+        if not command_results:
+            raise RuntimeError("预言家验人命令没有返回结果")
+
+        verify_target = command_results[0].result
+        if not verify_target:
+            raise RuntimeError("预言家没有选择验证目标")
+
+        target_player = self.get_villager_info_by_name(verify_target)
+        if not target_player:
+            raise RuntimeError(f"找不到被验证的玩家: {verify_target}")
+
+        # 发送验证结果给预言家
+        self.send_command('verify-villager', [prophet.member_id],
+                         {'name': verify_target, 'role': target_player.role.value})
+        
+        # 记录验证结果
+        result = {'name': verify_target, 'role': target_player.role.value}
+        self.days_manager.set_prophet_verify(self.game_time.day_number, result)
 
         # 进入女巫阶段
         self.game_state = GameState.WITCH_SAVE

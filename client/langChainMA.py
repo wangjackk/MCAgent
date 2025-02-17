@@ -1,3 +1,4 @@
+
 import json
 from typing import List, Union
 
@@ -8,8 +9,9 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from .memberAgent import BaseMemberAgent
-from .memory import AgentChat
+from client.dto import Message
+from client.memberAgent import BaseMemberAgent
+from client.memory import AgentChat
 
 
 @tool
@@ -53,8 +55,13 @@ def convert_to_langchain_messages(agent_chat: AgentChat) -> List[Union[HumanMess
 class LangchainMemberAgent(BaseMemberAgent):
     def __init__(self, name: str, member_id: str):
         super().__init__(name, member_id)
-        self.model = ChatOpenAI(model='gpt-4o-mini',
-                                api_key='xxx')
+
+        self.model = ChatOpenAI(model='gpt-4o',
+                                api_key='')
+
+        # self.model = ChatOpenAI(api_key='xxx',
+        #                         model = 'deepseek-ai/DeepSeek-R1',
+        #                         base_url='https://api.siliconflow.cn')
         # self.model = ChatOpenAI(model='google/gemini-2.0-flash-001',
         #                         api_key='xxx',
         #                         base_url='https://openrouter.ai/api/v1')

@@ -155,7 +155,7 @@ export class ChatRepositoryService {
     return this.chatModel
       .findOneAndUpdate(
         { chat_id },
-        { $addToSet: { listeners: listener_member_id } },
+        { $addToSet: { chat_listeners: listener_member_id } },
         { new: true },
       )
       .exec();
@@ -163,7 +163,7 @@ export class ChatRepositoryService {
 
   async getListeners(chat_id: string): Promise<string[]> {
     const chat = await this.chatModel.findOne({ chat_id }).exec();
-    return chat?.listeners || [];
+    return chat?.chat_listeners || [];
   }
 
   async removeListener(
@@ -173,7 +173,7 @@ export class ChatRepositoryService {
     return this.chatModel
       .findOneAndUpdate(
         { chat_id },
-        { $pull: { listeners: listener_member_id } },
+        { $pull: { chat_listeners: listener_member_id } },
         { new: true },
       )
       .exec();

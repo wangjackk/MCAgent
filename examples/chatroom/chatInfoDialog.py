@@ -1,4 +1,3 @@
-
 from typing import List
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QListWidget,
@@ -253,6 +252,80 @@ class ChatInfoDialog(QDialog):
         self.members_list.clear()
         # 添加成员
         for member in self.members:
-            self.add_member_item(member)
+            self.update_member_item(member)
         # 更新标题
         self.update_members_title()
+
+    def update_member_item(self, member: Member):
+        """更新成员项"""
+        item = QListWidgetItem()
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
+
+        # 成员名称
+        name_label = QLabel(member.name)
+        name_label.setStyleSheet("font-weight: bold;")
+        layout.addWidget(name_label)
+
+        # 在线状态指示器
+        status_label = QLabel()
+        if member.member_id in self.online_members:
+            status_label.setText("● 在线")
+            status_label.setStyleSheet("color: #2ecc71; font-weight: bold;")  # 绿色
+        else:
+            status_label.setText("○ 离线")
+            status_label.setStyleSheet("color: #95a5a6;")  # 灰色
+        layout.addWidget(status_label)
+
+        # 成员ID（可选显示）
+        id_label = QLabel(f"ID: {member.member_id}")
+        id_label.setStyleSheet("color: #7f8c8d; font-size: 10px;")
+        layout.addWidget(id_label)
+
+        layout.addStretch()
+
+        # 如果是群主，显示管理按钮
+        if globals.get_human_agent().member_id == member.member_id:
+            remove_button = QPushButton("移除")
+            remove_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #e74c3c;
+                    color: white;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                }
+                QPushButton:hover {
+                    background-color: #c0392b;
+                }
+            """)
+            remove_button.clicked.connect(lambda checked, m=member: self.remove_member(m))
+            layout.addWidget(remove_button)
+
+        item.setSizeHint(widget.sizeHint())
+        self.members_list.addItem(item)
+        self.members_list.setItemWidget(item, widget)
+
+    def remove_member(self, member: Member):
+        """移除成员"""
+        # 显示确认对话框
+        reply = QMessageBox.question(
+            self,
+            '确认删除',
+            f'确定要将成员 {member.name} 移出群聊吗？',
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            human_agent = globals.get_human_agent()
+            if human_agent:
+                # 从群聊中移除成员
+                success = human_agent.remove_member_from_chat(self.chat_id, member.member_id)
+                if success:
+                    print(f"成功移除成员: {member.name}")
+                    # 延迟500ms后刷新，等待服务器处理
+                    QTimer.singleShot(100, lambda: self.delayed_refresh())
+                else:
+                    QMessageBox.warning(self, '错误', '移除成员失败')
